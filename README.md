@@ -11,8 +11,8 @@
   - [Migração Lift-and-Shift](#migração-lift-and-shift)
   - [Modernização com Kubernetes](#modernização-com-kubernetes)
 - [Etapas do Projeto](#-etapas-do-projeto)
-  - [Etapa 1: Lift-and-Shift](#etapa-1-migração-lift-and-shift)
-  - [Etapa 2: Modernização](#etapa-2-modernização-com-kubernetes)
+  - [Etapa 1: Lift-and-Shift](#etapa-1-migra%C3%A7%C3%A3o-lift-and-shift---roteiro)
+  - [Etapa 2: Modernização](#etapa-2-moderniza%C3%A7%C3%A3o-com-kubernetes----roteiro)
 
 ## 🎯 Visão Geral
 
@@ -118,15 +118,15 @@ flowchart TD
   - Segurança básica com grupos de segurança e ACLs
 - **Ferramentas**:
   - AWS Application Migration Service (AWS MGN)
-  - AWS Database Migration Service (DMS).
+  - AWS Database Migration Service (DMS)
 - **Requisitos de segurança**:
   - Implementação de IAM roles e policies
   - Configuração de Security Groups e Network ACLs
 - **Processo de backup**:
-  - Configuração de snapshots automáticos para EC2.
-  - Backup de banco de dados com AWS Backup.
+  - Configuração de snapshots automáticos para EC2
+  - Backup de banco de dados com AWS Backup
 - **Custo da infraestrutura na AWS**:
-  - Utilização da AWS Pricing Calculator para estimar custos.
+  - [Utilização da AWS Pricing Calculator para estimar custos](https://calculator.aws/#/estimate?id=e9cb7dffa4052ff3c416d089e356852cf2e901ca)
 
 ### Etapa 2: Modernização com Kubernetes  -> [Roteiro](modernizacao.md)
 
