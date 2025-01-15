@@ -107,4 +107,4 @@ SELECT * FROM table_name ORDER BY timestamp DESC LIMIT 10;
 ## 4.2 Monitoramento  
 - Configurar CloudWatch basic monitoring  
 - Verificar métricas de CPU, memória e disco  
-- Monitorar logs de aplicação 
+- Monitorar logs de aplicação  
