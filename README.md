@@ -5,12 +5,12 @@
 
 ## 📋 Sumário
 - [Visão Geral](#-vis%C3%A3o-geral)
-- [Situação Atual](#situação-atual)
-- [Arquiteturas](#arquiteturas)
+- [Situação Atual](#-situa%C3%A7%C3%A3o-atual)
+- [Arquiteturas](#-arquiteturas)
   - [Arquitetura Atual](#arquitetura-atual)
   - [Migração Lift-and-Shift](#migração-lift-and-shift)
   - [Modernização com Kubernetes](#modernização-com-kubernetes)
-- [Etapas do Projeto](#etapas-do-projeto)
+- [Etapas do Projeto](#-etapas-do-projeto)
   - [Etapa 1: Lift-and-Shift](#etapa-1-migração-lift-and-shift)
   - [Etapa 2: Modernização](#etapa-2-modernização-com-kubernetes)
 
@@ -50,14 +50,14 @@ flowchart TD
             
             subgraph "Private Subnet"
                 EC2_BE[EC2 - Backend - Nginx]
-                RDS[(RDS Single-AZ MySQL)]
+                EC2_DB[EC2 - Database - MySQL]
             end
         end        
     end
     
     CLIENT[Cliente] --> EC2_FE
     EC2_FE --> EC2_BE
-    EC2_BE --> RDS
+    EC2_BE --> EC2_DB
 ```
 
 ### Modernização com Kubernetes
@@ -109,14 +109,26 @@ flowchart TD
 
 ## 📍 Etapas do Projeto
 
-### Etapa 1: Migração Lift-and-Shift
+### Etapa 1: Migração Lift-and-Shift -> [Roteiro](lift-and-shift.md)
 
 - **Objetivo**: Migração rápida com mínimas alterações
 - **Componentes Principais**:
-  - Utilização de serviços AWS equivalentes
+  - Utilização de serviços AWS equivalentes:
+      - Instâncias EC2 para frontend, backend e database
   - Segurança básica com grupos de segurança e ACLs
+- **Ferramentas**:
+  - AWS Application Migration Service (AWS MGN)
+  - AWS Database Migration Service (DMS).
+- **Requisitos de segurança**:
+  - Implementação de IAM roles e policies
+  - Configuração de Security Groups e Network ACLs
+- **Processo de backup**:
+  - Configuração de snapshots automáticos para EC2.
+  - Backup de banco de dados com AWS Backup.
+- **Custo da infraestrutura na AWS**:
+  - Utilização da AWS Pricing Calculator para estimar custos.
 
-### Etapa 2: Modernização com Kubernetes
+### Etapa 2: Modernização com Kubernetes  -> [Roteiro](modernizacao.md)
 
 - **Objetivo**: Modernização completa da infraestrutura
 - **Componentes Principais**:
@@ -126,6 +138,18 @@ flowchart TD
   - Sistema robusto de backup
   - Segurança avançada com WAF e Shield
   - Monitoramento com CloudWatch
+- **Ferramentas**:
+  - Amazon EKS
+- **Requisitos de segurança**:
+  - Implementação de políticas de segurança no Kubernetes
+  - Monitoramento e logging com AWS CloudWatch
+  - Cloudfront como CDN para uma criar uma camada adicional
+  - WAF para mitigação de SQL Injection e Script Cross-Site
+- **Processo de backup**:
+  - Backup de volumes EBS e snapshots de banco de dados
+  - Utilização de AWS S3 para armazenamento de backups
+- **Custo da infraestrutura na AWS**:
+  - Utilização da AWS Pricing Calculator para estimar custos
 
 ## 📝 Observações
 
