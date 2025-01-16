@@ -28,13 +28,13 @@ Sistema on-premise composto por:
 ## 📐 Arquiteturas
 
 ### Arquitetura Atual
-![Diagrama](imagens/on-premise.png)
+![Diagrama](https://github.com/paulovmonteirotech/Migracao-e-Modernizacao-para-AWS/blob/main/imagens/on-premise.png?raw=true)
 
 ### Migração Lift-and-Shift
-![Diagrama](imagens/asis.drawio.png)
+![Diagrama](https://github.com/paulovmonteirotech/Migracao-e-Modernizacao-para-AWS/blob/main/imagens/asis.drawio.png?raw=true)
 
 ### Modernização com Kubernetes
-![Diagrama](imagens/modernizacao2.drawio.png)
+![Diagrama](https://github.com/paulovmonteirotech/Migracao-e-Modernizacao-para-AWS/blob/main/imagens/modernizacao2.drawio.png?raw=true)
 
 
 ## 📍 Etapas do Projeto
