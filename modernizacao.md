@@ -1,207 +1,179 @@
-A migração visa mover todos os recursos da infraestrutura atual (servidores de aplicação, banco de dados e backend) para a AWS, utilizando os serviços adequados para garantir alta disponibilidade, escalabilidade, segurança e continuidade dos serviços.
+*Modernização para AWS com Elastic Kubernetes Service (EKS) e CI/CD Detalhado*
+*ATENÇÃO:*
+Fazer Backup das Máquinas de front, back, e banco de dados.
+ Primeiro fazer a modernização com essse backup como ambiente de teste.
+ Validando com o cliente pode se fazer um novo backup do ambiente de produção e fazer a modernização do ambiente de produção para a aws. A primeira modernizaçãp poderá ficar como um ambiente de desenvolvimento que pode ser ligada e desligada para testes.
 
-Objetivos principais:
+A modernização da infraestrutura atual para a AWS busca aplicar as melhores práticas de arquitetura cloud-native, como alta disponibilidade, segurança, escalabilidade e automação. Seguindo essas diretrizes, os componentes principais da nova arquitetura serão:
 
-Migrar servidores de aplicação (frontend e backend) para a AWS.
-Migrar banco de dados MySQL para o Amazon RDS.
-Garantir que o tráfego de usuários continue fluindo sem interrupções.
-Implementar uma arquitetura escalável e segura.
+EKS (Elastic Kubernetes Service): Orquestração de contêineres para gerenciar o backend e o frontend.
+Amazon RDS (MySQL) em Multi-AZ: Banco de dados gerenciado com backups automáticos e alta disponibilidade.
+Amazon S3: Armazenamento de objetos estáticos como imagens e vídeos.
+AWS CodePipeline e CodeBuild: Automação de integração e entrega contínua (CI/CD).
+AWS WAF, Security Groups, Secrets Manager, e IAM: Garantir a segurança da aplicação e dos dados.
+Passo a Passo Detalhado
 
+*1. Preparar o Ambiente de Contêineres*
+Criar Cluster EKS
+Configuração do Cluster:
 
- Etapa 1: As-Is
-Atividades Necessárias para a Migração
-Planejamento da Migração
+Utilize ferramentas como eksctl, Terraform, ou AWS CloudFormation.
+Defina subnets privadas para os nós do cluster e subnets públicas para o Classic Load Balancer (LB).
+Configure IAM Roles for Service Accounts (IRSA) para permitir acesso seguro dos pods a serviços AWS como RDS, S3 e Secrets Manager.
+Autoscaling e Nodes:
 
-Levantamento detalhado da arquitetura atual (servidores, serviços, dados, tráfego).
-Avaliação de dependências, como comunicação entre servidores, APIs e o banco de dados.
-Definir o planejamento de migração (data e hora de corte, riscos, rollback).
-Configuração da AWS
+Configure o Cluster Autoscaler para redimensionamento automático de nós.
+Utilize Auto Scaling Groups para os worker nodes do cluster.
+Instâncias recomendadas: t3.medium para ambiente de desenvolvimento e m5.large para produção.
+Configurar a Rede
+VPC:
+Crie uma VPC com subnets públicas e privadas.
+Habilite o NAT Gateway para pods que precisem acessar a internet.
+Configure o Internet Gateway para subnets públicas.
+Ferramentas
+kubectl: Para gerenciar o cluster Kubernetes.
+AWS CLI: Configuração geral da infraestrutura.
+IAM Roles: Permitir operações Kubernetes e acesso seguro a outros serviços AWS.
+*2. Containerizar as Aplicações*
+Criar Dockerfiles
+Backend:
+Configure APIs no Dockerfile com:
 
-Criar uma conta AWS (caso não tenha).
-Criar uma VPC (Virtual Private Cloud) para isolar sua rede.
-Configurar sub-redes públicas e privadas para separar os diferentes serviços.
-Criar grupos de segurança para controlar o tráfego de entrada e saída de seus servidores.
-Configurar IAM (Identity and Access Management) para controle de acessos a recursos.
+dockerfile
 
-3. Migração de Servidores (EC2)
+FROM node:18-alpine
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install
+COPY . .
+CMD ["npm", "start"]
+EXPOSE 3000
 
-Frontend (Aplicação): Migrar servidores web para EC2.
-Backend (APIs e Nginx): Migrar servidores backend para EC2.
-Banco de Dados MySQL: Utilizar AWS DMS para migrar o banco de dados MySQL.
+Frontend:
+Para aplicações React/Angular:
+dockerfile
 
-4. Verificação de Rede e Conectividade
+FROM node:18-alpine
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 80
+CMD ["npx", "serve", "-s", "build"]
 
-Verificar conectividade entre os servidores EC2, RDS
-Verificar a configuração de DNS e ajustar as entradas, se necessário.
+Armazenar Imagens no ECR
+Crie repositórios no Amazon Elastic Container Registry (ECR):
+bash
 
-5. Testes e Validação Pós-Migração
+aws ecr create-repository --repository-name backend-api
+aws ecr create-repository --repository-name frontend-app
 
-Testar a acessibilidade do front-end e da API.
-Validar a integridade do banco de dados e a consistência dos dados.
-Realizar testes de carga para garantir que a infraestrutura na AWS suporte o volume de tráfego.
+Build e Push:
+bash
 
-6. Pós-Migração
+docker build -t backend-api:v1 .
+docker tag backend-api:v1 <aws_account_id>.dkr.ecr.<region>.amazonaws.com/backend-api:v1
+docker push <aws_account_id>.dkr.ecr.<region>.amazonaws.com/backend-api:v1
 
-Monitorar a performance e os logs utilizando CloudWatch.
-Implementar ajustes finos e backups regulares.
+Configurar Variáveis de Ambiente
+Utilize o Secrets Manager para armazenar credenciais do banco, endpoints e tokens de API.
 
-7. Ferramentas e Serviços Utilizados
+*3. Implementar CI/CD com AWS*
+Configuração do CI/CD
+Criação do Repositório:
 
-AWS Application Migration Service (MGN):
-Serviço da AWS para migração de servidores de forma "lift-and-shift", ou seja, movendo a infraestrutura para a AWS sem grandes modificações.
+Utilize o AWS CodeCommit para gerenciar o código-fonte.
+bash
 
-AWS Database Migration Service (DMS):
-Ferramenta usada para migrar o banco de dados MySQL para o Amazon RDS sem causar grandes interrupções, mantendo a consistência dos dados.
+aws codecommit create-repository --repository-name app-repo
+Pipeline do CodePipeline:
 
-Amazon EC2:
-Instâncias de computação para hospedar o frontend, backend e outros serviços da aplicação.
+Crie um pipeline com as seguintes etapas:
+Source: Integre com o CodeCommit (ou GitHub).
+Build: Execute testes e crie imagens Docker.
+Deploy: Realize deploy no EKS.
+Detalhamento de Cada Etapa
+Source (CodeCommit):
 
-Amazon RDS (MySQL):
-Serviço de banco de dados gerenciado para substituir o MySQL local, com escalabilidade automática e backups.
+Push do código para o branch principal (main ou master).
+Build (CodeBuild):
 
-AWS Backup:
-Serviço de backup automatizado e centralizado para EC2 e RDS.
+Crie um arquivo buildspec.yml para o CodeBuild:
+yaml
 
- -------------Detalhamento do Processo de Migração------------
- *ATENÇÃO:*
- Fazer Backup das Máquinas de front, back, e banco de dados.
- Primeiro fazer a migração com essse backup como ambiente de teste.
- Validando com o cliente pode se fazer um novo backup do ambiente de produção e fazer a migração do ambiente de produção para a aws. A primeira migração poderá ficar como um ambiente de desenvolvimento que pode ser ligada e desligada para testes.
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+      docker: 20
+    commands:
+      - echo Installing dependencies...
+      - npm install
+  build:
+    commands:
+      - echo Building Docker image...
+      - docker build -t backend-api:v1 .
+      - docker tag backend-api:v1 <aws_account_id>.dkr.ecr.<region>.amazonaws.com/backend-api:v1
+      - docker push <aws_account_id>.dkr.ecr.<region>.amazonaws.com/backend-api:v1
+  post_build:
+    commands:
+      - echo Build completed successfully.
+Deploy:
 
-*---WS Application Migration Service (MGN)---*
+Utilize um script automatizado no CodeDeploy ou execute kubectl apply nos manifests do Kubernetes.
 
-*Instalação e Configuração do MGN na Máquina de Origem:*
+*4. Banco de Dados Gerenciado*
+Configure o Amazon RDS em modo Multi-AZ para alta disponibilidade.
+Habilite backups automáticos e snapshots periódicos.
+Ajuste o Security Group para aceitar conexões apenas do cluster EKS.
 
-*Passo 1:* No Console AWS, acesse o AWS MGN e crie uma nova Configuração de Migração.
-*Passo 2:* Baixe o agente MGN na máquina de origem.
-*Passo 3:* Instale o agente na máquina de origem (servidor de aplicação e backend) seguindo os passos de instalação fornecidos pela AWS.
-*Passo 4:* Ao instalar, o agente começará a replicar os dados da máquina para a AWS.
+*5. Armazenamento no Amazon S3*
+Crie um bucket S3 para armazenar objetos (imagens, vídeos, etc.).
+Configure Bucket Policies e IAM Roles para acesso seguro.
 
-*Configuração na AWS:*
+*6. Segurança e Observabilidade*
+Medidas de Segurança
+AWS WAF: Bloqueio de ameaças em nível de aplicação (SQLi, XSS).
+Security Groups: Controle de tráfego nos nós e banco de dados.
+Secrets Manager: Armazenar senhas e tokens.
+KMS: Criptografia de dados sensíveis.
+Monitoramento
+CloudWatch Logs e Metrics: Coleta de logs e métricas dos pods.
+Alarms: Notificação de anomalias, como alta latência ou erros HTTP 5xx.
 
-*Passo 1:* No Console AWS, crie uma instância EC2 de destino para cada servidor que você migrará, configure o EBS para o tamanho necessario e para não excluir no encerramento.
-*Passo 2:* Configure os grupos de segurança, sub-redes e roles IAM para garantir acesso seguro.
-*Passo 3:* Inicie a replicação de dados e a sincronização entre o servidor de origem e a instância EC2 na AWS.
-*Passo 4:* Após a sincronização, execute o processo de cutover para realizar a migração final, desligando a máquina original e ativando a instância EC2.
-
-
-*----AWS Database Migration Service (DMS)----*
-
-*Configuração de DMS:*
-*Passo 1:* Provisionar Amazon RDS. Escolha versão do MySQL compatível.
-Para um lift and shift TOTAL, será utilizado um RDS single-AZ
-*Passo 2:* No Console AWS, acesse AWS DMS e crie um Endpoint de Origem (para o MySQL on-premises).
-*Passo 3:* Crie um Endpoint de Destino para o Amazon RDS (MySQL).
-*Passo 4:* Crie uma Tarefa de Migração que definirá os dados a serem migrados, considerando migração contínua ou migração em lote (real-time ou batch).
-*Passo 5:* Inicie a tarefa de migração e monitore os logs e a integridade dos dados durante a migração.
-
-*Pós-Migração no DMS:*
-
-Após a migração inicial, o DMS pode continuar replicando os dados até que a migração seja totalmente concluída.
-Verifique os dados no RDS para garantir que não houve perda de informações.
-
-*DMS Validação*
-
-```sql
--- Validar contagem de registros
-SELECT COUNT(*) FROM table_name;
--- Validar últimos registros
-SELECT * FROM table_name ORDER BY timestamp DESC LIMIT 10;
-```
-
-*----Requisitos de Segurança----*
-*VPC:*
- Criação de uma VPC privada para isolar a infraestrutura da AWS.
-
-Sub-redes públicas para front-end.
-Sub-redes privadas para backend.
-Sub-redes privadas para banco de dados.
-Internet gatway
-Natgatway
-Rotas publicas Front-end com Internet Gatway
-Rotas privadas Back-end com Natgatway
-
-*Grupos de Segurança:*
-
-*Grupo para ec2 backend*
-Apenas entrada portas 80 e 443 da internet
-Entrada e saída com o grupo do RDS porta 3306
-Entrada e saída com o grupo do ec2 front portas 80 e 443
-*Grupo para ec2 frontend*
-Entrada e saída livre para todos os ips portas 80 e 443
-*Grupo para RDS*
-Entrada e saída porta 3306 para grupo do ec2 back-end
-
-Configuração de regras restritivas para controlar o tráfego (somente permitido entre servidores necessários).
-
-*IAM:*
-Configuração de roles e políticas específicas para garantir o acesso mínimo necessário para os usuários e sistemas de acordo com a exigencia e necessidade do cliente.
-
-Políticas Granulares: Crie políticas específicas para cada serviço, aplicando o princípio do menor privilégio.
-Roles para Migração:
-Role para MGN com acesso apenas a recursos necessários.
-Role para DMS com permissões restritas ao RDS e à origem de dados.
-Gerenciamento de Usuários: Segmente permissões conforme as responsabilidades, garantindo auditoria e rastreabilidade.
-
-
-*Criptografia:*
-
+*7. Backup*
 RDS:
- Criptografar o banco de dados MySQL com KMS (AWS Key Management Service).
+Backups automáticos habilitados.
+Snapshots diários para retenção de longo prazo.
+S3:
+Versão habilitada para objetos críticos.
+Replicação para outra região, garantindo DR (Disaster Recovery).
+Diagrama da Nova Arquitetura
+Cluster EKS: Subnets privadas.
+LB (Ingress Controller): Subnets públicas.
+RDS Multi-AZ: Para persistência de dados.
+S3: Armazenamento de objetos.
+CodePipeline + CodeBuild: CI/CD integrado.
+CloudWatch: Monitoramento centralizado.
 
-*----Processo de Backup---*
-
-*AWS Backup:*
-
-Configuração de políticas de backup para EC2 e RDS.
-Realização de backups automáticos diários, semanais e mensais.
-Armazenamento de backups em Amazon S3 Glacier para retenção de longo prazo.
-Backups Incrementais:
-
-Para minimizar custos, use backups incrementais, onde apenas as alterações são salvas após o backup inicial.
-
-
-*----Cálculo de Custos (Estimativa com AWS Calculator)-----*
 |Service           |Price (Monthly)    |Region          |
-|------------------|-------------------|-----------------
-|MGN               |$ 0,00             |North Virginia  |
-|EC2 (MGN)         |$ 12,45            |North Virginia  |
-|EC2 (Front-end)   |$ 16,18            |North Virginia  |
-|EC2 (Back-end)    |$ 28,45            |North Virginia  |
-|RDS               |$ 444,45           |North Virginia  |
-|DMS               |$ 64,13            |North Virginia  |
-|VPC               |$ 37,18            |North Virginia  |
-|**Total**         |**$ 576,28**       |                |
-|**Custo mensal**  |**512,15 USD**     |                |
 |------------------|-------------------|----------------|
-
-*Validação:*
-DNS Temporário
-Aponte um subdomínio para o IP público do EC2 Frontend.
-Verifique se o backend e o RDS estão respondendo corretamente.
-Checar Logs e Performance
-Monitorar a saúde das instâncias EC2 (CPU, memória) e do RDS (latência, conexões).
-Verificar se APIs, frontend e DB estão funcionando sem erros.
-
-*Pós-Cutover*  
-- Atualizar DNS/IPs  
-- Validar conectividade  
-- Monitorar performance  
-
-*Extras*
-
-IAM:
-Automatize a rotação de chaves KMS para criptografia de backups e banco de dados.
-Implante o AWS Identity Center para gerenciar acessos temporários em grandes equipes.
-Backup:
-Configure alertas via Amazon CloudWatch para falhas de backup.
-Use o AWS Backup Audit Manager para verificar conformidade com regulamentos e boas práticas.
-
-------------------------------------------
-*Resumo:*
-
-Criar a VPC, sub-redes, grupos de segurança e roles IAM na AWS.
-Configurar MGN na máquina de origem e na AWS, migrando servidores EC2.
-Configurar DMS para migrar o banco de dados MySQL para o Amazon RDS.
-Testar a infraestrutura migrada na AWS.
-Monitorar e otimizar o desempenho após a migração
+|RDS               |$1.587,80          |North Virginia  |
+|Route 53          |$ 00,50            |North Virginia  |
+|LB                |$ 19,05            |North Virginia  |
+|WAF               |$ 06,00            |North Virginia  |
+|S3                |$ 02,30            |North Virginia  |
+|CloudWatch        |$ 27,68            |North Virginia  |
+|Secrets Manager   |$ 01,20            |North Virginia  |
+|KMS               |$ 11,00            |North Virginia  |
+|EKS Cluster       |$ 73,00            |North Virginia  |
+|VPC               |$ 78,35            |North Virginia  |
+|EC2 (Worker Nodes)|$ 132,03           |North Virginia  |
+|ECR               |$ 00,50            |North Virginia  |
+|AWS Backup        |$ 12,50            |North Virginia  |
+|AWS CodePipeline  |$ 00,80            |North Virginia  |
+|AWS CodeBuild     |$ 09,00            |North Virginia  |
+|                  |                   |                |
+|**Custo mensal**  |**1.961,71 USD**   |                |
+|------------------|-------------------|----------------|
