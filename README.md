@@ -28,84 +28,14 @@ Sistema on-premise composto por:
 ## 📐 Arquiteturas
 
 ### Arquitetura Atual
-
-```mermaid
-flowchart TD
-    subgraph "Infra On-Premise"
-        CLIENT[Cliente] --> FE[Frontend Server - React]
-        FE --> BE[Backend Server - Nginx]
-        BE --> DB[Database Server - MySQL]
-    end
-```
+![Diagrama](imagens/on-premise.png)
 
 ### Migração Lift-and-Shift
-
-```mermaid
-flowchart TD
-    subgraph "AWS Cloud"
-        subgraph "VPC"
-            subgraph "Public Subnet"
-                EC2_FE[EC2 - Frontend - React]
-            end
-            
-            subgraph "Private Subnet"
-                EC2_BE[EC2 - Backend - Nginx]
-                EC2_DB[EC2 - Database - MySQL]
-            end
-        end        
-    end
-    
-    CLIENT[Cliente] --> EC2_FE
-    EC2_FE --> EC2_BE
-    EC2_BE --> EC2_DB
-```
+![Diagrama](imagens/asis.drawio.png)
 
 ### Modernização com Kubernetes
+![Diagrama](imagens/modernizacao2.drawio.png)
 
-```mermaid
-flowchart TD
-    subgraph "AWS Cloud"
-        subgraph "VPC"
-            subgraph "EKS Cluster"
-                ALB[Application Load Balancer]
-                subgraph "Node Group"
-                    POD_FE[Frontend Pods]
-                    POD_BE[Backend Pods]
-                end
-            end
-            
-            subgraph "Database Layer"
-                AURORA[(Aurora Multi-AZ)]
-            end
-            
-            S3[(S3 Bucket)]
-            CDN[CloudFront]
-        end
-        
-        BACKUP[AWS Backup]
-        
-        subgraph "Security & Monitoring"
-            WAF[AWS WAF]
-            SHIELD[AWS Shield]
-            CW[CloudWatch]
-        end
-    end
-    
-    CLIENT[Cliente] --> WAF
-    WAF --> CDN
-    CDN --> ALB
-    ALB --> POD_FE
-    POD_FE --> POD_BE
-    POD_BE --> AURORA
-    POD_BE --> S3
-    CDN --> S3
-    AURORA --> BACKUP
-    S3 --> BACKUP
-    
-    POD_FE --> CW
-    POD_BE --> CW
-    AURORA --> CW
-```
 
 ## 📍 Etapas do Projeto
 
@@ -114,7 +44,7 @@ flowchart TD
 - **Objetivo**: Migração rápida com mínimas alterações
 - **Componentes Principais**:
   - Utilização de serviços AWS equivalentes:
-      - Instâncias EC2 para frontend, backend e database
+      - Instâncias EC2 para frontend, backend e RDS
   - Segurança básica com grupos de segurança e ACLs
 - **Ferramentas**:
   - AWS Application Migration Service (AWS MGN)
@@ -126,7 +56,9 @@ flowchart TD
   - Configuração de snapshots automáticos para EC2
   - Backup de banco de dados com AWS Backup
 - **Custo da infraestrutura na AWS**:
-  - [Utilização da AWS Pricing Calculator para estimar custos](https://calculator.aws/#/estimate?id=e9cb7dffa4052ff3c416d089e356852cf2e901ca)
+  - Utilização da AWS Pricing Calculator para estimar custos:  
+  [Acesse o AWS Pricing Calculator aqui](https://calculator.aws/#/estimate?id=2bf444dd22794b437bded693312cac2c0fa2ee2f)
+
 
 ### Etapa 2: Modernização com Kubernetes  -> [Roteiro](modernizacao.md)
 
@@ -149,7 +81,8 @@ flowchart TD
   - Backup de volumes EBS e snapshots de banco de dados
   - Utilização de AWS S3 para armazenamento de backups
 - **Custo da infraestrutura na AWS**:
-  - Utilização da AWS Pricing Calculator para estimar custos
+ - Utilização da AWS Pricing Calculator para estimar custos:  
+  [Acesse o AWS Pricing Calculator aqui](https://calculator.aws/#/estimate?id=90d1b1fa8c7b85629f5d8d703ace2eb0780acadc)
 
 ## 📝 Observações
 
@@ -173,9 +106,5 @@ Os diagramas mostram a evolução da arquitetura em cada fase, com foco em:
 - Dashboard de monitoramento
 - Rastreamento de performance
 
-## 📫 Contato
-
-Para mais informações sobre este projeto, entre em contato com a equipe de arquitetura.
-
 ---
-⚡️ Desenvolvido por TI SOLUÇÕES INCRÍVEIS para Fast Engineering S/A
+⚡️ Desenvolvido por Paulo Monteiro e Mariana Soares
